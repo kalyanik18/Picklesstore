@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pickles Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold text-green-700" id="auth-modal-title">Sign In</h2>
+          <button onclick="hideAuthModal()" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div id="auth-forms">
+          <!-- Sign In Form -->
+          <form id="signin-form" class="space-y-4">
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+              <input type="email" id="email" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+              <input type="password" id="password" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Sign In</button>
+            <p class="text-center text-sm">
+              Don't have an account? 
+              <a href="#" onclick="showRegisterForm()" class="text-green-600 hover:underline">Register</a>
+            </p>
+          </form>
+          
+          <!-- Register Form -->
+          <form id="register-form" class="space-y-4 hidden">
+            <div>
+              <label for="reg-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+              <input type="text" id="reg-name" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div>
+              <label for="reg-email" class="block text-sm font-medium text-gray-700">Email</label>
+              <input type="email" id="reg-email" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div>
+              <label for="reg-password" class="block text-sm font-medium text-gray-700">Password</label>
+              <input type="password" id="reg-password" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div>
+              <label for="reg-confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+              <input type="password" id="reg-confirm-password" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Register</button>
+            <p class="text-center text-sm">
+              Already have an account? 
+              <a href="#" onclick="showSignInForm()" class="text-green-600 hover:underline">Sign In</a>
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App (hidden until authenticated) -->
+  <div id="app" class="hidden">
+    <!-- Navbar -->
+    <header class="bg-green-700 text-white">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="text-2xl font-bold">Pickles Store</div>
+        <div class="flex-1 mx-6">
+          <input type="text" id="search-input" placeholder="Search pickles..." class="w-full p-2 rounded-lg text-black" />
+        </div>
+        <div class="flex items-center gap-4">
+          <span id="user-greeting" class="hidden sm:inline"></span>
+          <button onclick="logout()" class="hover:underline hidden sm:inline">Logout</button>
+          <a href="javascript:void(0)" onclick="showCart()" class="relative">
+            🛒
+            <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-xs px-1 rounded-full">0</span>
+          </a>
+          <button onclick="logout()" class="sm:hidden">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8" id="main-content">
+
+      <!-- Veg Pickles -->
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold mb-4 text-green-700">🥒 Veg Pickles</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="veg-pickles">
+          <!-- Products will be rendered here dynamically -->
+        </div>
+      </section>
+
+      <!-- Non-Veg Pickles -->
+      <section>
+        <h2 class="text-2xl font-bold mb-4 text-red-700">🍗 Non-Veg Pickles</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="nonveg-pickles">
+          <!-- Products will be rendered here dynamically -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Cart Sidebar -->
+    <div id="cart-sidebar" class="fixed inset-y-0 right-0 w-full sm:w-96 bg-white shadow-lg transform translate-x-full transition-transform duration-300 ease-in-out z-40 overflow-y-auto">
+      <div class="p-4">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold">Your Cart (<span id="cart-sidebar-count">0</span>)</h2>
+          <button onclick="hideCart()" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div id="cart-items" class="space-y-4">
+          <!-- Cart items will be inserted here dynamically -->
+        </div>
+        
+        <div class="border-t mt-4 pt-4">
+          <div class="flex justify-between font-bold text-lg">
+            <span>Total:</span>
+            <span id="cart-total">₹0</span>
+          </div>
+          <button onclick="checkout()" class="w-full bg-green-600 text-white py-2 rounded mt-4 hover:bg-green-700">
+            Proceed to Checkout
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overlay -->
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden" onclick="hideCart()"></div>
+
+    <!-- Footer -->
+    <footer class="bg-green-800 text-white text-center py-4 mt-10">
+      © 2025 Pickles Store. All Rights Reserved.
+    </footer>
+  </div>
+
+  <script>
+    // User accounts (simulated database)
+    let users = JSON.parse(localStorage.getItem('pickles-users')) || [
+      { name: "Admin", email: "admin@pickles.com", password: "admin123" }
+    ];
+    
+    // Current user
+    let currentUser = JSON.parse(localStorage.getItem('pickles-current-user')) || null;
+    
+    // Cart
+    let cart = JSON.parse(localStorage.getItem('pickles-cart')) || [];
+    
+    // DOM elements
+    const authModal = document.getElementById('auth-modal');
+    const app = document.getElementById('app');
+    const cartSidebar = document.getElementById('cart-sidebar');
+    const overlay = document.getElementById('overlay');
+    const searchInput = document.getElementById('search-input');
+    
+    // Product data with real images
+    const products = {
+      veg: [
+        { 
+          name: "Mango Pickle",  
+          price: 120, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSRTIyUimAJQsw3zVeSjL-Pj5gPKiuxiva6MA&s",
+          description: "Traditional spicy Andhra mango pickle with mustard and spices." 
+        },
+        { 
+          name: "Lemon Pickle", 
+          price: 100, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRZG15i-hOseDIQpUTgfRhCv2wpZqMTLKd8fQ&s",
+          description: "Tangy and sweet lemon pickle with fenugreek and chili." 
+        },
+        { 
+          name: "Gongura Pickle", 
+          price: 130, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlgm6No2ZpWe454Xt-TCEJ1Jathb76O4Vlwg&s",
+          description: "Andhra special Gongura pachadi (sorrel leaves) with sesame." 
+        },
+        { 
+          name: "Mixed Veg Pickle", 
+          price: 150, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqBQZJsZGGw3QFvTUUrPG7P0sPDJuBQgJ8ww&s", 
+          description: "Assorted vegetables pickled with traditional spices." 
+        },
+        { 
+          name: "Garlic Pickle", 
+          price: 110, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRImqgYEA9Jzg6JkQQVkoxuc3JGNPHXyYnmoA&s", 
+          description: "Spicy garlic pickle with mustard oil and red chilies." 
+        },
+        { 
+          name: "Chilli Pickle", 
+          price: 90, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSVj7LYHEi2_dVDIL18pIXqYVHE-IQd8VgmUg&s=", 
+          description: "Hot green chili pickle with tangy lemon juice." 
+        }
+      ],
+      nonveg: [
+        { 
+          name: "Chicken Pickle", 
+          price: 180, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzWbXMZ51ZJq85V0ZB9iVo39lUAWQQJw5QKw&s",
+          description: "Spicy and flavorful chicken pickle from Andhra." 
+        },
+        { 
+          name: "Mutton Pickle", 
+          price: 220, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRN04z_x2Pi4ENr7PNrLHxPQ3Zoamukb9uplA&s", 
+          description: "Rich and spicy mutton pickle, home-style taste." 
+        },
+        { 
+          name: "Fish Pickle", 
+          price: 160, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTTEKQt0-QgAS6O2Totp7VDfYgPl3V1ZcRAPg&s", 
+          description: "Authentic fish pickle with tangy masala." 
+        },
+        { 
+          name: "Prawn Pickle", 
+          price: 200, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiq5Q6DHELiqalgWpy3LlUZC4Q4JGpWMTY2w&s", 
+          description: "Spicy prawn pickle with curry leaves and mustard." 
+        },
+        { 
+          name: "Egg Pickle", 
+          price: 140, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSge7dmYwGA5E9UFvaASc1SkEkcK6YSQM9gDQ&s", 
+          description: "Boiled eggs in spicy red chili gravy." 
+        },
+        { 
+          name: "Crab Pickle", 
+          price: 240, 
+          image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQPCa3Ty_BQ6YmePja9Z4o4rD_1YVH_8FD_jw&s", 
+          description: "Special crab pickle with traditional coastal spices." 
+        }
+      ]
+    };
+    
+    // Initialize the app
+    function initApp() {
+      if (currentUser) {
+        showApp();
+      } else {
+        showAuthModal();
+      }
+      
+      setupEventListeners();
+      updateCartUI();
+    }
+    
+    // Setup event listeners
+    function setupEventListeners() {
+      // Auth forms
+      document.getElementById('signin-form').addEventListener('submit', handleSignIn);
+      document.getElementById('register-form').addEventListener('submit', handleRegister);
+      
+      // Search functionality
+      searchInput?.addEventListener('input', handleSearch);
+    }
+    
+    // Show authentication modal
+    function showAuthModal() {
+      authModal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      showSignInForm();
+    }
+    
+    // Hide authentication modal
+    function hideAuthModal() {
+      authModal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    
+    // Show sign in form
+    function showSignInForm() {
+      document.getElementById('signin-form').classList.remove('hidden');
+      document.getElementById('register-form').classList.add('hidden');
+      document.getElementById('auth-modal-title').textContent = 'Sign In';
+    }
+    
+    // Show register form
+    function showRegisterForm() {
+      document.getElementById('signin-form').classList.add('hidden');
+      document.getElementById('register-form').classList.remove('hidden');
+      document.getElementById('auth-modal-title').textContent = 'Register';
+    }
+    
+    // Handle sign in
+    function handleSignIn(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      const user = users.find(u => u.email === email && u.password === password);
+      
+      if (user) {
+        currentUser = user;
+        localStorage.setItem('pickles-current-user', JSON.stringify(currentUser));
+        showNotification(`Welcome back, ${user.name}!`);
+        hideAuthModal();
+        showApp();
+      } else {
+        showNotification('Invalid email or password', 'error');
+      }
+    }
+    
+    // Handle register
+    function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value;
+      const email = document.getElementById('reg-email').value;
+      const password = document.getElementById('reg-password').value;
+      const confirmPassword = document.getElementById('reg-confirm-password').value;
+      
+      if (password !== confirmPassword) {
+        showNotification('Passwords do not match', 'error');
+        return;
+      }
+      
+      if (users.some(u => u.email === email)) {
+        showNotification('Email already registered', 'error');
+        return;
+      }
+      
+      const newUser = { name, email, password };
+      users.push(newUser);
+      localStorage.setItem('pickles-users', JSON.stringify(users));
+      
+      currentUser = newUser;
+      localStorage.setItem('pickles-current-user', JSON.stringify(currentUser));
+      
+      showNotification(`Welcome to Pickles Store, ${name}!`);
+      hideAuthModal();
+      showApp();
+    }
+    
+    // Logout
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('pickles-current-user');
+      showNotification('You have been logged out');
+      hideApp();
+      showAuthModal();
+    }
+    
+    // Show main app
+    function showApp() {
+      app.classList.remove('hidden');
+      document.getElementById('user-greeting').textContent = `Hi, ${currentUser.name}`;
+      renderProducts();
+    }
+    
+    // Hide main app
+    function hideApp() {
+      app.classList.add('hidden');
+    }
+    
+    // Render products
+    function renderProducts(filter = '') {
+      const vegContainer = document.getElementById('veg-pickles');
+      const nonvegContainer = document.getElementById('nonveg-pickles');
+      
+      vegContainer.innerHTML = '';
+      nonvegContainer.innerHTML = '';
+      
+      const filteredVeg = products.veg.filter(p => 
+        p.name.toLowerCase().includes(filter.toLowerCase()) || 
+        p.description.toLowerCase().includes(filter.toLowerCase())
+      );
+      
+      const filteredNonveg = products.nonveg.filter(p => 
+        p.name.toLowerCase().includes(filter.toLowerCase()) || 
+        p.description.toLowerCase().includes(filter.toLowerCase())
+      );
+      
+      filteredVeg.forEach(product => {
+        vegContainer.innerHTML += `
+          <div class="bg-white shadow rounded overflow-hidden hover:shadow-lg transition">
+            <img class="w-full h-48 object-cover" src="${product.image}" alt="${product.name}">
+            <div class="p-4">
+              <h3 class="font-semibold text-lg">${product.name}</h3>
+              <p class="text-gray-600 text-sm mb-2">${product.description}</p>
+              <div class="flex justify-between items-center">
+                <span class="font-bold text-green-700">₹${product.price}</span>
+                <button onclick="addToCart('${product.name}', ${product.price}, '${product.image}')" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Add to Cart</button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      filteredNonveg.forEach(product => {
+        nonvegContainer.innerHTML += `
+          <div class="bg-white shadow rounded overflow-hidden hover:shadow-lg transition">
+            <img class="w-full h-48 object-cover" src="${product.image}" alt="${product.name}">
+            <div class="p-4">
+              <h3 class="font-semibold text-lg">${product.name}</h3>
+              <p class="text-gray-600 text-sm mb-2">${product.description}</p>
+              <div class="flex justify-between items-center">
+                <span class="font-bold text-red-600">₹${product.price}</span>
+                <button onclick="addToCart('${product.name}', ${product.price}, '${product.image}')" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Add to Cart</button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+    
+    // Handle search
+    function handleSearch() {
+      renderProducts(searchInput.value);
+    }
+    
+    // Cart functions
+    function addToCart(name, price, image) {
+      const existingItem = cart.find(item => item.name === name);
+      
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        cart.push({
+          name: name,
+          price: price,
+          image: image,
+          quantity: 1
+        });
+      }
+      
+      updateCartUI();
+      saveCart();
+      showNotification(`${name} added to cart!`);
+    }
+    
+    function removeFromCart(name) {
+      cart = cart.filter(item => item.name !== name);
+      updateCartUI();
+      saveCart();
+      showNotification(`${name} removed from cart`);
+    }
+    
+    function updateQuantity(name, newQuantity) {
+      const item = cart.find(item => item.name === name);
+      if (item) {
+        item.quantity = Math.max(1, newQuantity);
+        updateCartUI();
+        saveCart();
+      }
+    }
+    
+    function updateCartUI() {
+      const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+      document.getElementById('cart-count').textContent = totalItems;
+      document.getElementById('cart-sidebar-count').textContent = totalItems;
+      
+      const cartItemsContainer = document.getElementById('cart-items');
+      cartItemsContainer.innerHTML = '';
+      
+      if (cart.length === 0) {
+        cartItemsContainer.innerHTML = '<p class="text-gray-500 text-center py-4">Your cart is empty</p>';
+        document.getElementById('cart-total').textContent = '₹0';
+        return;
+      }
+      
+      let total = 0;
+      
+      cart.forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        
+        const itemElement = document.createElement('div');
+        itemElement.className = 'flex items-start border-b pb-4';
+        itemElement.innerHTML = `
+          <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded">
+          <div class="ml-3 flex-1">
+            <h3 class="font-medium">${item.name}</h3>
+            <p class="text-gray-600">₹${item.price}</p>
+            <div class="flex items-center mt-1">
+              <button onclick="updateQuantity('${item.name}', ${item.quantity - 1})" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-minus"></i>
+              </button>
+              <span class="mx-2">${item.quantity}</span>
+              <button onclick="updateQuantity('${item.name}', ${item.quantity + 1})" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="font-medium">₹${itemTotal}</p>
+            <button onclick="removeFromCart('${item.name}')" class="text-red-500 hover:text-red-700 mt-1">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `;
+        cartItemsContainer.appendChild(itemElement);
+      });
+      
+      document.getElementById('cart-total').textContent = `₹${total}`;
+    }
+    
+    function showCart() {
+      cartSidebar.classList.remove('translate-x-full');
+      overlay.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function hideCart() {
+      cartSidebar.classList.add('translate-x-full');
+      overlay.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+    
+    function saveCart() {
+      localStorage.setItem('pickles-cart', JSON.stringify(cart));
+    }
+    
+    function checkout() {
+      if (cart.length === 0) {
+        showNotification('Your cart is empty!', 'error');
+        return;
+      }
+      showNotification('Proceeding to checkout...');
+    }
+    
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 px-4 py-2 rounded shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+      }`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+        setTimeout(() => notification.remove(), 300);
+      }, 2000);
+    }
+    
+    // Initialize the app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', initApp);
+    
+    // Make functions available globally
+    window.showAuthModal = showAuthModal;
+    window.hideAuthModal = hideAuthModal;
+    window.showSignInForm = showSignInForm;
+    window.showRegisterForm = showRegisterForm;
+    window.logout = logout;
+    window.showCart = showCart;
+    window.hideCart = hideCart;
+    window.addToCart = addToCart;
+    window.removeFromCart = removeFromCart;
+    window.updateQuantity = updateQuantity;
+  </script>
+
+</body>
+</html>
